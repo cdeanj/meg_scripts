@@ -7,7 +7,7 @@
 #include "fastq_read.h"
 using namespace std;
 
-void write_to_file(const map<string,fastq_read> &mapper, const string &prefix, const string &postfix) {
+void write_to_file(const map<string,fastq_read> &mapper, const string &postfix) {
 	ofstream out_match("match_" + postfix);
 	ofstream out_mmatch("mismatch_" + postfix);
 	map<string,fastq_read>::const_iterator it;
@@ -80,7 +80,7 @@ int main(int argc, const char *argv[]) {
 	for(int i = 0; i < fastq_files.size(); i++) {
 		string curr_fq = fastq_files[i];
 		mapper = process_fastq(curr_fq);
-		write_to_file(mapper, args.prefix, curr_fq);
+		write_to_file(mapper, curr_fq);
 	}
 
 	return 0;
