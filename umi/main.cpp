@@ -9,7 +9,6 @@ using namespace std;
 
 void write_to_file(const map<string,fastq_read> &mapper, const string &prefix, const string &postfix) {
 	ofstream out(prefix + "_" + postfix);
-	cout << prefix + "_" + postfix << endl;
 	map<string,fastq_read>::const_iterator it;
 	for(it = mapper.begin(); it != mapper.end(); ++it) {
 		if(!it->second._skip) {
