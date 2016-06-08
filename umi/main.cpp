@@ -8,17 +8,25 @@
 using namespace std;
 
 void write_to_file(const map<string,fastq_read> &mapper, const string &prefix, const string &postfix) {
-	ofstream out(prefix + "_" + postfix);
+	ofstream out_match("match_" + postfix);
+	ofstream out_mmatch("mismatch_" + postfix);
 	map<string,fastq_read>::const_iterator it;
 	for(it = mapper.begin(); it != mapper.end(); ++it) {
 		if(!it->second._skip) {
-			out << "@" << it->first << "/" << it->second._count << endl;
-			out << it->second._seq << endl;
-			out << it->second._plus << endl;
-			out << it->second._qual << endl;
+			out_match << "@" << it->first << "/" << it->second._count << endl;
+			out_match << it->second._seq << endl;
+			out_match << it->second._plus << endl;
+			out_match << it->second._qual << endl;
+		}
+		else {
+			out_mmatch << "@" << it->first << endl;
+			out_mmatch << it->second._seq << endl;
+			out_mmatch << it->second._plus << endl;
+			out_mmatch << it->second._qual << endl;
 		}
 	}
-	out.close();
+	out_match.close();
+	out_mmatch.close();
 }
 
 string get_umi(const string &line) {
@@ -55,7 +63,8 @@ map<string, fastq_read> process_fastq(const string &f) {
 }
 
 int main(int argc, const char *argv[]) {
-	if(argc != 7) {
+	cout << argc << endl;
+	if(argc != 5) {
 		usage();
 		exit(EXIT_FAILURE);
 	}

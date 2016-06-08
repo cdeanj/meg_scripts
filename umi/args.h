@@ -17,7 +17,6 @@ void static usage() {
 	fprintf(stderr, "./umi -first <forward> -second <reverse> -o <output_name>\n");
 	fprintf(stderr, "-first	STRING	fastq forward\n");
 	fprintf(stderr, "-second STRING	fastq reverse\n");
-	fprintf(stderr, "-prefix	STRING	output prefix\n\n");
 }
 
 static inline cmd_args
@@ -27,7 +26,6 @@ parse_command_line(int argc, const char *argv[]) {
 	for(int i = 1; i < argc; i++) {
 		if(arg_list[i] == "-first") args.ff = arg_list[++i];
 		else if(arg_list[i] == "-second") args.fr = arg_list[++i];
-		else if(arg_list[i] == "-prefix") args.prefix = arg_list[++i];
 		else usage();
 	}
 	return args;
