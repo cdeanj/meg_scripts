@@ -75,7 +75,6 @@ map<string, fastq_read> process_fastq(const string &f) {
 }
 
 int main(int argc, const char *argv[]) {
-	cout << argc << endl;
 	if(argc != 5) {
 		usage();
 		exit(EXIT_FAILURE);
