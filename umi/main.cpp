@@ -14,25 +14,25 @@ using namespace std;
  * UMI's with identical sequences are written to a match file
  */
 void write_to_file(const map<string,fastq_read> &mapper, const string &postfix) {
-	ofstream out_match("match_" + postfix);
-	ofstream out_mmatch("mismatch_" + postfix);
+	ofstream ofs_m("match_" + postfix);
+	ofstream ofs_mm("mismatch_" + postfix);
 	map<string,fastq_read>::const_iterator it;
 	for(it = mapper.begin(); it != mapper.end(); ++it) {
 		if(!it->second._skip) {
-			out_match << "@" << it->first << "/" << it->second._count << endl;
-			out_match << it->second._seq << endl;
-			out_match << it->second._plus << endl;
-			out_match << it->second._qual << endl;
+			ofs_m << "@" << it->first << "/" << it->second._count << endl;
+			ofs_m << it->second._seq << endl;
+			ofs_m << it->second._plus << endl;
+			ofs_m << it->second._qual << endl;
 		}
 		else {
-			out_mmatch << "@" << it->first << endl;
-			out_mmatch << it->second._seq << endl;
-			out_mmatch << it->second._plus << endl;
-			out_mmatch << it->second._qual << endl;
+			ofs_mm << "@" << it->first << endl;
+			ofs_mm << it->second._seq << endl;
+			ofs_mm << it->second._plus << endl;
+			ofs_mm << it->second._qual << endl;
 		}
 	}
-	out_match.close();
-	out_mmatch.close();
+	ofs_m.close();
+	ofs_mm.close();
 }
 
 /*
