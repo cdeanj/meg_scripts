@@ -5,8 +5,8 @@
 #include <vector>
 
 struct cmd_args {
-	std::string ff;		// fastq forward reads
-	std::string fr;		// fastq reverse reads
+	std::string ff;		// fastq forward reads file pointer
+	std::string fr;		// fastq reverse reads file pointer
 	std::string prefix;
 };
 
