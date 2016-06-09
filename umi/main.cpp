@@ -7,6 +7,12 @@
 #include "fastq_read.h"
 using namespace std;
 
+/*
+ * Passes a map of fastq reads and postfix datum. If the skip boolean for each
+ * umi is set, then there must be a collection of fastq reads with identical umis
+ * that differed in their sequences. These are written to a mismatch file.
+ * UMI's with identical sequences are written to a match file
+ */
 void write_to_file(const map<string,fastq_read> &mapper, const string &postfix) {
 	ofstream out_match("match_" + postfix);
 	ofstream out_mmatch("mismatch_" + postfix);
@@ -29,11 +35,17 @@ void write_to_file(const map<string,fastq_read> &mapper, const string &postfix) 
 	out_mmatch.close();
 }
 
+/*
+ * Returns a 24-mer extracted from each each sequence identifier
+*/
 string get_umi(const string &line) {
 	int idx = line.find("|")+1;
 	return line.substr(idx,24);
 }
 
+/*
+ * Returns a map of fastq reads, with a umi representing each sequence
+ */
 map<string, fastq_read> process_fastq(const string &f) {
 	map<string, fastq_read> m;
 	string line, umi, seq, plus, qual;
