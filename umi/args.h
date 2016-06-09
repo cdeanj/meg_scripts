@@ -7,7 +7,6 @@
 struct cmd_args {
 	std::string ff;		// fastq forward reads file pointer
 	std::string fr;		// fastq reverse reads file pointer
-	std::string prefix;
 };
 
 void static usage() {
