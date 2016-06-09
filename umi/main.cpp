@@ -2,10 +2,16 @@
 #include <string>
 #include <vector>
 #include <fstream>
+#include <libgen.h>
+#include <string.h>
 #include <map>
 #include "args.h"
 #include "fastq_read.h"
 using namespace std;
+
+string base_name(string fp) {
+	return string(basename(&fp[0]));
+}
 
 /*
  * Passes a map of fastq reads and postfix datum. If the skip boolean for each
@@ -91,7 +97,7 @@ int main(int argc, const char *argv[]) {
 	for(int i = 0; i < fastq_files.size(); i++) {
 		string curr_fq = fastq_files[i];
 		mapper = process_fastq(curr_fq);
-		write_to_file(mapper, curr_fq);
+		write_to_file(mapper, base_name(curr_fq));
 	}
 
 	return 0;
