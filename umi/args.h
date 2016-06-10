@@ -13,7 +13,7 @@ void static usage() {
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Program: UMI \n");
 	fprintf(stderr, "Contact: Chris Dean <cdean11@rams.colostate.edu>\n");
-	fprintf(stderr, "./umi -first <forward> -second <reverse> -o <output_name>\n");
+	fprintf(stderr, "./umi -first <forward> -second <reverse>\n");
 	fprintf(stderr, "-first	STRING	fastq forward\n");
 	fprintf(stderr, "-second STRING	fastq reverse\n\n");
 }
