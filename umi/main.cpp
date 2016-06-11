@@ -23,7 +23,6 @@ struct match_and_mism get_m_and_mm(const multimap<string,fastq_read> &mm) {
 	struct match_and_mism m_and_mm; 
 	map<string,fastq_read> fm;
 	vector<pair<string,fastq_read> > fmm;
-	cout << mm.size() << endl;
 	multimap<string,fastq_read>::const_iterator it;
 	for(it = mm.begin(); it != mm.end(); ) {
 		string k = it->first;
