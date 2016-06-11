@@ -10,37 +10,88 @@
 #include "fastq_read.h"
 using namespace std;
 
+struct match_and_mism {
+	map<string,fastq_read> m;
+	vector<pair<string,fastq_read> > mm;
+};
+
 string base_name(string fp) {
 	return string(basename(&fp[0]));
 }
 
-/*
- * Passes a map of fastq reads and postfix datum. If the skip boolean for each
- * umi is set, then there must be a collection of fastq reads with identical umis
- * that differed in their sequences. These are written to a mismatch file.
- * UMI's with identical sequences are written to a match file
- */
-void write_to_file(const multimap<string,fastq_read> &mm, const string &postfix) {
-	ofstream ofs_m("match_" + postfix);
-	ofstream ofs_mm("mismatch_" + postfix);
+struct match_and_mism get_m_and_mm(const multimap<string,fastq_read> &mm) {
+	struct match_and_mism m_and_mm; 
+	map<string,fastq_read> fm;
+	vector<pair<string,fastq_read> > fmm;
+	cout << mm.size() << endl;
+	multimap<string,fastq_read>::const_iterator it;
+	for(it = mm.begin(); it != mm.end(); ) {
+		string k = it->first;
+		if(mm.count(k) == 1) {
+			fm.insert(pair<string,fastq_read>(k, it->second));
+		}
+		do {
+			if(fm.count(k) == 0) {
+				fmm.push_back(pair<string,fastq_read>(it->first, it->second));
+			}
+			++it;
+		} while(it != mm.end() && k == it->first);
+	}
+	m_and_mm.m = fm;
+	m_and_mm.mm = fmm;
+	return m_and_mm;
+}
 
-	for(auto it = mm.begin(); it != mm.end(); ++it) {
-		if(mm.count(it->first) == 1) {
-			ofs_m << "@" << it->first << "/" << it->second._count << endl;
-			ofs_m << it->second._seq << endl;
-			ofs_m << it->second._plus << endl;
-			ofs_m << it->second._qual << endl;		
+void write_matches(const map<string,fastq_read> &m, const string &postfix) {
+	ofstream ofs("matches_" + postfix);
+	map<string,fastq_read>::const_iterator it;
+	for(it = m.begin(); it != m.end(); ++it) {
+		ofs << "@" << it->first << "/" << it->second._count << endl;
+		ofs << it->second._seq << endl;
+		ofs << it->second._plus << endl;
+		ofs << it->second._qual << endl;
+	}
+	ofs.close();
+}
+
+void write_mismatches(const vector<pair<string,fastq_read> > &vp, const string &postfix) {
+	ofstream ofs("mismatches_" + postfix);
+	vector<pair<string,fastq_read> >::const_iterator it;
+	for(it = vp.begin(); it != vp.end(); ++it) {
+		ofs << "@" << it->first << "/" << it->second._count << endl;
+		ofs << it->second._seq << endl;
+		ofs << it->second._plus << endl;
+		ofs << it->second._qual << endl;		
+	}
+	ofs.close();
+}
+
+void i_sect(map<string,fastq_read> &f, map<string,fastq_read> &r) {
+	map<string,fastq_read>::iterator f_it, r_it;
+	for(f_it = r.begin(); f_it != r.end(); ++f_it) {
+		if(f.count(f_it->first) == 0) {
+			r.erase(f_it->first);
 		}
-		else {
-			ofs_mm << "@" << it->first << "/" << it->second._count << endl;
-                        ofs_mm << it->second._seq << endl;
-                        ofs_mm << it->second._plus << endl;
-                        ofs_mm << it->second._qual << endl;
+	}
+	for(r_it = f.begin(); r_it != f.end(); ++r_it) {
+		if(r.count(r_it->first) == 0) {
+			f.erase(r_it->first);
 		}
-        }
-	
-	ofs_m.close();
-	ofs_mm.close();
+	}
+}
+
+void write_to_file(const vector<multimap<string, fastq_read> > &vmm, struct cmd_args args) {
+	multimap<string,fastq_read> forward = vmm[0];
+	multimap<string,fastq_read> reverse = vmm[1];
+	struct match_and_mism f = get_m_and_mm(forward);
+	struct match_and_mism r = get_m_and_mm(reverse);
+	i_sect(f.m, r.m);
+	string f_base_name = base_name(args.ff);
+	string r_base_name = base_name(args.fr);
+	write_matches(f.m, f_base_name);
+	write_mismatches(f.mm, f_base_name);
+	write_matches(r.m, r_base_name);
+	write_mismatches(r.mm, r_base_name);
 }
 
 /*
@@ -50,37 +101,6 @@ string get_umi(const string &line) {
 	int idx = line.find("|")+1;
 	return line.substr(idx,24);
 }
-
-/*
- * Returns a map of fastq reads, with a umi representing each sequence
- */
-/*map<string, fastq_read> process_fastq(const string &f) {
-	map<string, vector<fastq_read> > m;
-	string line, umi, seq, plus, qual;
-
-	ifstream in(f);
-	while(getline(in, line)) {
-		if(line[0] == '@') {
-			umi = get_umi(line);
-			getline(in, seq);
-			getline(in, plus);
-			getline(in, qual);	
-		}
-		if(m.count(umi) > 0 && (m[umi]._skip == false) ) {
-			if(m[umi]._seq == seq) {
-				m[umi]._count += 1;
-			}
-			else {
-				m[umi]._skip = true;
-			}
-		}
-		else {
-			m.insert(pair<string,fastq_read>(umi, fastq_read(seq, plus, qual)));
-		}
-	}
-	in.close();
-	return m;
-}*/
 
 bool seqs_are_equal(const multimap<string, fastq_read> &mm, const string &seq, const string &umi) {
 	auto key_range = mm.equal_range(umi);
@@ -157,25 +177,6 @@ multimap<string, fastq_read> process_fastq(const string &f) {
 	return mm;	
 }
 
-void print_mm(multimap<string, fastq_read> &mm) {
-	for(auto it = mm.begin(); it != mm.end(); ++it) {
-		if(mm.count(it->first) == 1) {
-			cout << "MATCH" << endl;
-			cout << "@" << it->first << "/" << it->second._count << endl;
-			cout << it->second._seq << endl;
-			cout << it->second._plus << endl;
-			cout << it->second._qual << endl;
-		}
-		else {
-			cout << "MISMATCH" << endl;
-			cout << "@" << it->first << "/" << it->second._count << endl;
-			cout << it->second._seq << endl;
-			cout << it->second._plus << endl;
-			cout << it->second._qual << endl;
-		}
-	}
-}
-
 int main(int argc, const char *argv[]) {
 	if(argc != 5) {
 		usage();
@@ -189,14 +190,14 @@ int main(int argc, const char *argv[]) {
 	fastq_files.push_back(args.ff);
 	fastq_files.push_back(args.fr);
 
+	vector<multimap<string,fastq_read> > v;
 	multimap<string, fastq_read> mapper;
 	for(int i = 0; i < fastq_files.size(); i++) {
 		string curr_fq = fastq_files[i];
 		mapper = process_fastq(curr_fq);
-		//print_mm(mapper);	
-		mapper = process_fastq(curr_fq);
-		write_to_file(mapper, base_name(curr_fq));
+		v.push_back(mapper);
 	}
+	write_to_file(v, args);
 
 	return 0;
 }
