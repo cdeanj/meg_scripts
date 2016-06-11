@@ -4,6 +4,7 @@
 #include <fstream>
 #include <libgen.h>
 #include <string.h>
+#include <algorithm>
 #include <map>
 #include "args.h"
 #include "fastq_read.h"
