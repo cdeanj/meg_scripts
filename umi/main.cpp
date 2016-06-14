@@ -5,28 +5,33 @@
 #include <libgen.h>
 #include <string.h>
 #include <algorithm>
+#include <chrono>
 #include <map>
+#include <unordered_map>
+
 #include "args.h"
 #include "fastq_read.h"
 using namespace std;
 
+unordered_multimap<string,fastq_read> umm;
+
 struct match_and_mism {
-	map<string,fastq_read> m;
-	vector<pair<string,fastq_read> > mm;
+	unordered_map<string,fastq_read> u_m;
+	vector<pair<string,fastq_read> > vp_mm;
 };
 
 string base_name(string fp) {
 	return string(basename(&fp[0]));
 }
 
-struct match_and_mism get_m_and_mm(const multimap<string,fastq_read> &mm) {
+struct match_and_mism get_m_and_mm(const unordered_multimap<string,fastq_read> &umm_reads) {
 	struct match_and_mism m_and_mm; 
-	map<string,fastq_read> fm;
+	unordered_map<string,fastq_read> fm;
 	vector<pair<string,fastq_read> > fmm;
-	multimap<string,fastq_read>::const_iterator it;
-	for(it = mm.begin(); it != mm.end(); ) {
+	unordered_multimap<string,fastq_read>::const_iterator it;
+	for(it = umm_reads.begin(); it != umm_reads.end(); ) {
 		string k = it->first;
-		if(mm.count(k) == 1) {
+		if(umm_reads.count(k) == 1) {
 			fm.insert(pair<string,fastq_read>(k, it->second));
 		}
 		do {
@@ -34,63 +39,70 @@ struct match_and_mism get_m_and_mm(const multimap<string,fastq_read> &mm) {
 				fmm.push_back(pair<string,fastq_read>(it->first, it->second));
 			}
 			++it;
-		} while(it != mm.end() && k == it->first);
+		} while(it != umm_reads.end() && k == it->first);
 	}
-	m_and_mm.m = fm;
-	m_and_mm.mm = fmm;
+	m_and_mm.u_m = fm;
+	m_and_mm.vp_mm = fmm;
 	return m_and_mm;
 }
 
 void write_matches(const map<string,fastq_read> &m, const string &postfix) {
 	ofstream ofs("matches_" + postfix);
-	map<string,fastq_read>::const_iterator it;
-	for(it = m.begin(); it != m.end(); ++it) {
-		ofs << "@" << it->first << "/" << it->second._count << endl;
-		ofs << it->second._seq << endl;
-		ofs << it->second._plus << endl;
-		ofs << it->second._qual << endl;
+	for(auto it = m.begin(); it != m.end(); ++it) {
+		ofs << "@" << it->first << "/" << it->second._count << '\n';
+		ofs << it->second._seq << '\n';
+		ofs << it->second._plus << '\n';
+		ofs << it->second._qual << '\n';
 	}
 	ofs.close();
 }
 
 void write_mismatches(const vector<pair<string,fastq_read> > &vp, const string &postfix) {
 	ofstream ofs("mismatches_" + postfix);
-	vector<pair<string,fastq_read> >::const_iterator it;
-	for(it = vp.begin(); it != vp.end(); ++it) {
-		ofs << "@" << it->first << "/" << it->second._count << endl;
-		ofs << it->second._seq << endl;
-		ofs << it->second._plus << endl;
-		ofs << it->second._qual << endl;		
+	for(auto it = vp.begin(); it != vp.end(); ++it) {
+		ofs << "@" << it->first << "/" << it->second._count << '\n';
+		ofs << it->second._seq << '\n';
+		ofs << it->second._plus << '\n';
+		ofs << it->second._qual << '\n';		
 	}
 	ofs.close();
 }
 
-void i_sect(map<string,fastq_read> &f, map<string,fastq_read> &r) {
-	map<string,fastq_read>::iterator f_it, r_it;
-	for(f_it = r.begin(); f_it != r.end(); ++f_it) {
+void i_sect(unordered_map<string,fastq_read> &f, unordered_map<string,fastq_read> &r) {
+	auto f_it = r.begin();
+	while(f_it != r.end()) {
 		if(f.count(f_it->first) == 0) {
-			r.erase(f_it->first);
+			f_it = r.erase(f_it);
 		}
-	}
-	for(r_it = f.begin(); r_it != f.end(); ++r_it) {
+		else {
+			++f_it;
+		}
+	} 
+	auto r_it = f.begin();
+	while(r_it != f.end()) {
 		if(r.count(r_it->first) == 0) {
-			f.erase(r_it->first);
+			r_it = f.erase(r_it);
 		}
-	}
+		else {
+			++r_it;
+		}
+	}	
 }
 
-void write_to_file(const vector<multimap<string, fastq_read> > &vmm, struct cmd_args args) {
-	multimap<string,fastq_read> forward = vmm[0];
-	multimap<string,fastq_read> reverse = vmm[1];
-	struct match_and_mism f = get_m_and_mm(forward);
-	struct match_and_mism r = get_m_and_mm(reverse);
-	i_sect(f.m, r.m);
+void write_to_file(const vector<unordered_multimap<string, fastq_read> > &vmm, struct cmd_args args) {
+	struct match_and_mism f = get_m_and_mm(vmm[0]);
+	struct match_and_mism r = get_m_and_mm(vmm[1]);
+	i_sect(f.u_m, r.u_m);
+	map<string,fastq_read> s_f(f.u_m.begin(), f.u_m.end());
+	map<string,fastq_read> s_r(r.u_m.begin(), r.u_m.end());
+
 	string f_base_name = base_name(args.ff);
 	string r_base_name = base_name(args.fr);
-	write_matches(f.m, f_base_name);
-	write_mismatches(f.mm, f_base_name);
-	write_matches(r.m, r_base_name);
-	write_mismatches(r.mm, r_base_name);
+
+	write_matches(s_f, f_base_name);
+	write_mismatches(f.vp_mm, f_base_name);
+	write_matches(s_r, r_base_name);
+	write_mismatches(r.vp_mm, r_base_name);
 }
 
 /*
@@ -101,8 +113,8 @@ string get_umi(const string &line) {
 	return line.substr(idx,24);
 }
 
-bool seqs_are_equal(const multimap<string, fastq_read> &mm, const string &seq, const string &umi) {
-	auto key_range = mm.equal_range(umi);
+bool seqs_are_equal(const string &seq, const string &umi) {
+	auto key_range = umm.equal_range(umi);
 	for(auto it = key_range.first; it != key_range.second; ++it) {
 		if(it->second._seq == seq) {
 			return true;
@@ -111,8 +123,8 @@ bool seqs_are_equal(const multimap<string, fastq_read> &mm, const string &seq, c
 	return false;
 }
 
-void update_count(multimap<string, fastq_read> &mm, const string &seq, const string &umi) {
-	auto key_range = mm.equal_range(umi);
+void update_count(const string &seq, const string &umi) {
+	auto key_range = umm.equal_range(umi);
 	for(auto it = key_range.first; it != key_range.second; ++it) {
 		if(it->second._seq == seq) {
 			it->second._count += 1;
@@ -121,18 +133,17 @@ void update_count(multimap<string, fastq_read> &mm, const string &seq, const str
 	}
 }
 
-bool seq_was_added(const multimap<string, fastq_read> mm, const string &seq, const string &umi, const string &qual) {
-	fastq_read fr(seq, "+", qual);
-	auto const &r = mm.equal_range(umi);
-	bool found = std::any_of(r.first, r.second,
-				[&fr](decltype(mm)::value_type const &p) {
-					return p.second._seq == fr._seq;
-				});
-	return found;
+bool seq_was_added(const string &seq, const string &umi) {
+	auto r = umm.equal_range(umi);
+	for(auto d = r.first; d != r.second; ++d) {
+		if(d->second._seq == seq) {
+			return true;
+		}
+	}
+	return false;
 }
 
-multimap<string, fastq_read> process_fastq(const string &f) {
-	multimap<string, fastq_read> mm;
+void process_fastq(const string &f) {
 	string line, umi, seq, plus, qual;
 
 	ifstream in(f);
@@ -148,32 +159,32 @@ multimap<string, fastq_read> process_fastq(const string &f) {
 			getline(in, qual);
 		}
 		// if the umi count is one, then we know we're dealing with umi's with identical sequences (so far)
-		if(mm.count(umi) == 1) {
+		int c = umm.count(umi);
+		if(c == 1) {
 			// is the current sequence identical to the sequence associated with the umi?
-			if(seqs_are_equal(mm, seq, umi)) {
-				update_count(mm, seq, umi);	
+			if(seqs_are_equal(seq, umi)) {
+				update_count(seq, umi);	
 			}
 			// if these sequences are not unique, then we should add this sequence to the current list
 			else {
-				mm.insert(pair<string, fastq_read>(umi, fastq_read(seq, plus, qual)));
+				umm.insert(pair<string, fastq_read>(umi, fastq_read(seq, plus, qual)));
 			}
 		}
 		// if the amount of keys equal to umi is greater than one, then there are more than one sequences corresponding to this umi
 		// as a result, we update the count of the sequence associated to that some umi
-		else if(mm.count(umi) > 1) {
-			if(seq_was_added(mm, seq, umi, qual)) {
-				update_count(mm, seq, umi);
+		else if(c > 1) {
+			if(seq_was_added(seq, umi)) {
+				update_count(seq, umi);
 			}
 			else {
-				mm.insert(pair<string, fastq_read>(umi, fastq_read(seq, plus, qual)));
+				umm.insert(pair<string, fastq_read>(umi, fastq_read(seq, plus, qual)));
 			}
 		}
 		// umi doesn't exist yet, let's add it
 		else {
-			mm.insert(pair<string, fastq_read>(umi, fastq_read(seq, plus, qual)));
+			umm.insert(pair<string, fastq_read>(umi, fastq_read(seq, plus, qual)));
 		}
 	}
-	return mm;	
 }
 
 int main(int argc, const char *argv[]) {
@@ -189,14 +200,17 @@ int main(int argc, const char *argv[]) {
 	fastq_files.push_back(args.ff);
 	fastq_files.push_back(args.fr);
 
-	vector<multimap<string,fastq_read> > v;
+	umm.reserve(100000000);
+
+	vector<unordered_multimap<string,fastq_read> > vmm;
 	multimap<string, fastq_read> mapper;
 	for(int i = 0; i < fastq_files.size(); i++) {
 		string curr_fq = fastq_files[i];
-		mapper = process_fastq(curr_fq);
-		v.push_back(mapper);
+		process_fastq(curr_fq);
+		vmm.push_back(umm);
+		umm.clear();
 	}
-	write_to_file(v, args);
+	write_to_file(vmm, args);
 
 	return 0;
 }
