@@ -21,7 +21,6 @@ public:
 	std::string _plus;
 	std::string _qual;
 	int _count;
-	bool _skip;
 };
 
 #endif // _FASTQ_READ_H

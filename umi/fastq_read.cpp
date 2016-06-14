@@ -8,5 +8,4 @@ fastq_read::fastq_read(const std::string seq, const std::string plus, std::strin
 	_plus = plus;
 	_qual = qual;
 	_count = 1;
-	_skip = false;
 }
