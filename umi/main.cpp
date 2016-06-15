@@ -14,6 +14,7 @@
 using namespace std;
 
 unordered_multimap<string,fastq_read> umm;
+struct cmd_args args;
 
 struct match_and_mism {
 	unordered_map<string,fastq_read> u_m;
@@ -69,9 +70,15 @@ void write_mismatches(const vector<pair<string,fastq_read> > &vp, const string &
 }
 
 void i_sect(unordered_map<string,fastq_read> &f, unordered_map<string,fastq_read> &r) {
+	ofstream ofs_f("deleted_" + base_name(args.ff));
+	ofstream ofs_r("deleted_" + base_name(args.fr));
 	auto f_it = r.begin();
 	while(f_it != r.end()) {
 		if(f.count(f_it->first) == 0) {
+			ofs_r << "@" << f_it->first << "/" << f_it->second._count << '\n';
+                	ofs_r << f_it->second._seq << '\n';
+                	ofs_r << f_it->second._plus << '\n';
+                	ofs_r << f_it->second._qual << '\n';
 			f_it = r.erase(f_it);
 		}
 		else {
@@ -81,6 +88,10 @@ void i_sect(unordered_map<string,fastq_read> &f, unordered_map<string,fastq_read
 	auto r_it = f.begin();
 	while(r_it != f.end()) {
 		if(r.count(r_it->first) == 0) {
+			ofs_f << "@" << r_it->first << "/" << r_it->second._count << '\n';
+                        ofs_f << r_it->second._seq << '\n';
+                        ofs_f << r_it->second._plus << '\n';
+                        ofs_f << r_it->second._qual << '\n';
 			r_it = f.erase(r_it);
 		}
 		else {
@@ -193,7 +204,6 @@ int main(int argc, const char *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 
-	struct cmd_args args;
 	args = parse_command_line(argc, argv);
 
 	vector<string> fastq_files;
