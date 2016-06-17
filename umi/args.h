@@ -16,7 +16,8 @@ void static usage() {
 	fprintf(stderr, "Contact: Chris Dean <cdean11@rams.colostate.edu>\n");
 	fprintf(stderr, "./umi -first <forward> -second <reverse> -prefix <output prefix>\n");
 	fprintf(stderr, "-first	STRING	fastq forward\n");
-	fprintf(stderr, "-second STRING	fastq reverse\n\n");
+	fprintf(stderr, "-second STRING	fastq reverse\n");
+	fprintf(stderr, "-prefix STRING output prefix\n\n");
 }
 
 static inline cmd_args
