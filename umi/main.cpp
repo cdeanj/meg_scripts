@@ -111,7 +111,7 @@ map<string,fastq_read> generate_consensus_fastq() {
 		string template_seq = parent_key->second._seq;
 		auto key_range = umm.equal_range(parent_key->first);
 		for(auto child_key = key_range.first; child_key != key_range.second; ++child_key) {
-			if(template_seq == child_key->second._seq) {
+			if(template_seq != child_key->second._seq) {
 				transform(template_seq, child_key->second._seq);
 			}
 			occ += child_key->second._count;
