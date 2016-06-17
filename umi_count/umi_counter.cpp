@@ -5,7 +5,6 @@
 #include <sstream>
 #include <libgen.h>
 #include <map>
-#include <unordered_map>
 using namespace std;
 
 int s_to_i(const string &s) {
@@ -15,18 +14,18 @@ int s_to_i(const string &s) {
 	return i;
 }
 
-unordered_map<int, int> get_umi_count(const string &fp) {
+map<int, int> get_umi_count(const string &fp) {
 	ifstream ifs(fp);
 	if(!ifs) {
 		cerr << "Could not open fastq file" << endl;
 		exit(EXIT_FAILURE);
 	}
-	int member, slash_idx;
-	unordered_map<int, int> mapper;
+	int member, colon_idx;
+	map<int, int> mapper;
 	string umi, seq, plus, qual, occ;
 	while(getline(ifs, umi)) {
-		slash_idx = umi.find(":");
-		occ = umi.substr(slash_idx+1, string::npos);
+		colon_idx = umi.find(":");
+		occ = umi.substr(colon_idx+1, string::npos);
 		member = s_to_i(occ);
 		mapper[member]++;
 		getline(ifs, seq);
@@ -43,9 +42,9 @@ string base_name(string fp) {
 	return b_name.substr(0, ext_idx);
 }
 
-void write_umi_count(const unordered_map<int, int> &m, const string &prefix, const string &basename) {
+void write_umi_count(const map<int, int> &m, const string &prefix, const string &basename) {
 	ofstream ofs(prefix + "_" + basename);
-	unordered_map<int, int>::const_iterator it;
+	map<int, int>::const_iterator it;
 	for(it = m.begin(); it != m.end(); ++it) {
 		ofs << it->first << "," << it->second << '\n';
 	}
@@ -62,8 +61,8 @@ int main(int argc, char *argv[]) {
 	string reverse_fp = argv[2];
 	string output_prefix = argv[3];
 
-	unordered_map<int, int> forward_count = get_umi_count(forward_fp);
-	unordered_map<int, int> reverse_count = get_umi_count(reverse_fp);
+	map<int, int> forward_count = get_umi_count(forward_fp);
+	map<int, int> reverse_count = get_umi_count(reverse_fp);
 
 	string forward_base_name = base_name(forward_fp);
 	string reverse_base_name = base_name(reverse_fp);
