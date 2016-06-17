@@ -46,16 +46,6 @@ void update_count(const string &seq, const string &umi) {
 	}
 }
 
-bool seq_was_added(const string &seq, const string &umi) {
-	auto r = umm.equal_range(umi);
-	for(auto d = r.first; d != r.second; ++d) {
-		if(d->second._seq == seq) {
-			return true;
-		}
-	}
-	return false;
-}
-
 void transform(string &s1, const string &s2) {
 	for(int i = 0; i < s1.length(); i++) {
 		if(s1[i] != s2[i]) {
@@ -80,16 +70,8 @@ void process_fastq(const string &f) {
 			getline(in, qual);
 		}
 		int key_count = umm.count(umi);
-		if(key_count == 1) {
+		if(key_count >= 1) {
 			if(seqs_are_equal(seq, umi)) {
-				update_count(seq, umi);
-			}
-			else {
-				umm.insert(make_pair(umi, fastq_read(seq, plus, qual)));
-			}
-		}
-		else if(key_count > 1) {
-			if(seq_was_added(seq, umi)) {
 				update_count(seq, umi);
 			}
 			else {
@@ -147,13 +129,14 @@ int main(int argc, const char *argv[]) {
 	fastq_files.push_back(args.ff);
 	fastq_files.push_back(args.fr);
 
-	umm.reserve(100000000);
+	umm.reserve(50000000);
 	map<string,fastq_read> mfq;
 	for(int i = 0; i < fastq_files.size(); i++) {
 		string curr_fq = fastq_files[i];
 		process_fastq(curr_fq);
 		mfq = generate_consensus_fastq();
 		write_fastq(mfq, args.prefix, base_name(curr_fq));
+		mfq.clear();
 		umm.clear();
 	}
 
