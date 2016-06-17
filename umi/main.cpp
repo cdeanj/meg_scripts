@@ -153,7 +153,7 @@ int main(int argc, const char *argv[]) {
 		string curr_fq = fastq_files[i];
 		process_fastq(curr_fq);
 		mfq = generate_consensus_fastq();
-		write_fastq(mfq, args.prefix, base_name(fastq_files[i]));
+		write_fastq(mfq, args.prefix, base_name(curr_fq));
 		umm.clear();
 	}
 
