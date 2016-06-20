@@ -86,13 +86,11 @@ map<string,fastq_read> generate_consensus_fastq() {
 	map<string,int> visited;
 	for(auto parent_key = umm.begin(); parent_key != umm.end(); ++parent_key) {
 		if(visited.count(parent_key->first) > 0) continue;
-		cout << parent_key->first << endl;
 		int occ = 0;
 		string umi = parent_key->first;
 		string template_seq = parent_key->second._seq;
 		auto key_range = umm.equal_range(parent_key->first);
 		for(auto child_key = key_range.first; child_key != key_range.second; ++child_key) {
-			//cout << child_key->first << endl;
 			visited[parent_key->first]++;
 			if(template_seq != child_key->second._seq) {
 				transform(template_seq, child_key->second._seq);
@@ -140,7 +138,6 @@ int main(int argc, const char *argv[]) {
 		write_fastq(mfq, args.prefix, base_name(curr_fq));
 		mfq.clear();
 		umm.clear();
-		cout << endl;
 	}
 
 	return 0;
